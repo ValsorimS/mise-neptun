@@ -8,7 +8,7 @@ const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-// --- SVĚTLA ---
+// --- SVĚTLA ----
 scene.add(new THREE.AmbientLight(0xffffff, 0.8));
 const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
 dirLight.position.set(10, 20, 10);
