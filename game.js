@@ -67,38 +67,31 @@ function animate() {
     requestAnimationFrame(animate);
     const delta = clock.getDelta();
     let hybeSe = false;
-    let jeVlevo = false;
 
     // 1. OVLÁDÁNÍ A POHYB
     if (keys.a || joystickVector.x < -0.1) { 
         player.position.x -= 0.15; 
-        jeVlevo = true; // Snímky 1,2 v obrázku
+        player.scale.x = 2; // Kouká doleva (původní obrázek)
         hybeSe = true; 
     } else if (keys.d || joystickVector.x > 0.1) { 
         player.position.x += 0.15; 
-        jeVlevo = false; // Snímky 3,4 v obrázku
+        player.scale.x = -2; // Zrcadlení doprava
         hybeSe = true; 
     }
     
     if (keys.w || joystickVector.y > 0.1) { player.position.z -= 0.15; hybeSe = true; }
     if (keys.s || joystickVector.y < -0.1) { player.position.z += 0.15; hybeSe = true; }
 
-    // 2. ANIMACE (výběr snímku podle směru)
+    // 2. ANIMACE (Vždy použijeme jen první dva snímky, zrcadlení udělá zbytek)
     if (hybeSe) {
         aktualniSnimek += 10 * delta;
         let frame = Math.floor(aktualniSnimek) % 2; // Střídá 0 a 1
-        
-        if (jeVlevo) {
-            playerTexture.offset.x = frame * 0.25; 
-        } else {
-            playerTexture.offset.x = 0.5 + (frame * 0.25);
-        }
+        playerTexture.offset.x = frame * 0.25;      // Použije vždy první dva snímky
     } else {
-        // Stání (vždy první snímek v řadě - kouká vlevo)
         playerTexture.offset.x = 0;
     }
 
-    // 3. RADOSTNÝ VÝSKOK
+    // 3. RADOSTNÝ VÝSKOK (zůstává stejný)
     if (casRadosti > 0) {
         casRadosti -= delta;
         player.position.y = vychoziVyska + Math.sin((1 - (casRadosti / 0.4)) * Math.PI) * 0.8;
@@ -106,7 +99,7 @@ function animate() {
         player.position.y = vychoziVyska;
     }
 
-    // 4. KOLIZE A LOGIKA
+    // 4. KOLIZE A LOGIKA (zůstává stejná)
     plastics.forEach((p, i) => {
         if (player.position.distanceTo(p.position) < 1.5) {
             scene.remove(p);
@@ -116,11 +109,9 @@ function animate() {
             casRadosti = 0.4;
             
             const status = document.getElementById('status');
-            if (plastCount === 10) {
-                status.innerText = "Mise splněna! 10 plastů doma!";
+            if (plastCount >= 10) {
+                status.innerText = "Mise splněna! " + plastCount + " plastů!";
                 status.style.color = "#2ecc71";
-            } else if (plastCount > 10) {
-                status.innerText = "Jsi borec! Plastů: " + plastCount;
             }
         }
     });
