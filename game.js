@@ -8,25 +8,31 @@ const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-// --- SVĚTLA ----
+// --- SVĚTLA ---
 scene.add(new THREE.AmbientLight(0xffffff, 0.8));
 const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-dirLight.position.set(10, 20, 10);
+dirLight.position.set(0, 20, 10);
 scene.add(dirLight);
 
-// --- TEXTURY ---
+// --- TEXTURY A PODLAHA ---
 const textureLoader = new THREE.TextureLoader();
 const moonTexture = textureLoader.load('mesic.jpg');
 moonTexture.wrapS = moonTexture.wrapT = THREE.RepeatWrapping;
 moonTexture.repeat.set(10, 10);
-scene.add(new THREE.Mesh(new THREE.PlaneGeometry(60, 60), new THREE.MeshStandardMaterial({ map: moonTexture })));
+
+const floor = new THREE.Mesh(
+    new THREE.PlaneGeometry(60, 60), 
+    new THREE.MeshStandardMaterial({ map: moonTexture })
+);
+floor.rotation.x = -Math.PI / 2; // Plochá podlaha
+scene.add(floor);
 
 // --- HRÁČ ---
 const playerTexture = textureLoader.load('panacek_krok.png');
 playerTexture.repeat.set(1 / 4, 1);
 const player = new THREE.Sprite(new THREE.SpriteMaterial({ map: playerTexture }));
-player.scale.set(2, 2, 1);
-const vychoziVyska = 1;
+player.scale.set(2, 2, 1); 
+const vychoziVyska = 1.0; 
 player.position.y = vychoziVyska;
 scene.add(player);
 
@@ -62,26 +68,28 @@ function animate() {
     const delta = clock.getDelta();
     let hybeSe = false;
 
-    // Pohyb a Otáčení (přes rotation.y)
-    if (keys.a || joystickVector.x < 0) { 
+    // Pohyb a otáčení přes scale.x (zrcadlení)
+    if (keys.a || joystickVector.x < -0.1) { 
         player.position.x -= 0.15; 
-        player.rotation.y = Math.PI; // Otočení o 180 stupňů
+        player.scale.x = -2; // Otočení doleva
         hybeSe = true; 
-    } else if (keys.d || joystickVector.x > 0) { 
+    } else if (keys.d || joystickVector.x > 0.1) { 
         player.position.x += 0.15; 
-        player.rotation.y = 0;       // Reset otočení
+        player.scale.x = 2;  // Otočení doprava
         hybeSe = true; 
     }
-    if (keys.w || joystickVector.y > 0) { player.position.z -= 0.15; hybeSe = true; }
-    if (keys.s || joystickVector.y < 0) { player.position.z += 0.15; hybeSe = true; }
+    if (keys.w || joystickVector.y > 0.1) { player.position.z -= 0.15; hybeSe = true; }
+    if (keys.s || joystickVector.y < -0.1) { player.position.z += 0.15; hybeSe = true; }
 
     // Sprite Animace
     if (hybeSe) {
         aktualniSnimek += 10 * delta;
         playerTexture.offset.x = (Math.floor(aktualniSnimek) % 4) / 4;
+    } else {
+        playerTexture.offset.x = 0;
     }
 
-    // Radost
+    // Radostný výskok
     if (casRadosti > 0) {
         casRadosti -= delta;
         player.position.y = vychoziVyska + Math.sin((1 - (casRadosti / 0.4)) * Math.PI) * 0.8;
@@ -97,7 +105,6 @@ function animate() {
             plastCount++;
             document.getElementById('plast-count').innerText = plastCount;
             casRadosti = 0.4;
-            if (plastCount >= 10) document.getElementById('status').innerText = "Vše uklizeno! Neopren hotov.";
         }
     });
 
