@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Nano Banán: Mise Neptun</title>
+    <style>
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background-color: #000; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            touch-action: none; 
+        }
+        canvas { display: block; }
+        #ui {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 8px;
+            pointer-events: none;
+            z-index: 10;
+        }
+        #info { font-size: 20px; font-weight: bold; color: #3498db; }
+        #status { margin-top: 5px; font-size: 14px; }
+        #controls { 
+            position: absolute; 
+            top: 10px; 
+            right: 10px; 
+            color: rgba(255,255,255,0.7); 
+            background: rgba(0,0,0,0.5); 
+            padding: 5px 10px; 
+            border-radius: 5px;
+            font-size: 12px;
+            pointer-events: none;
+        }
+        #joystick-zone {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            width: 150px;
+            height: 150px;
+            z-index: 10;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.10.0/nipplejs.min.js"></script>
+</head>
+<body>
+
+    <div id="ui">
+        <div id="info">Plast: <span id="plast-count">0</span>/10</div>
+        <div id="status">Sbírej plasty pro Neopren!</div>
+    </div>
+    
+    <div id="controls">PC: W,A,S,D | Mobil: Joystick</div>
+    <div id="joystick-zone"></div>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+    <script type="module" src="game.js"></script>
+
+</body>
+</html>
