@@ -67,27 +67,36 @@ function animate() {
     requestAnimationFrame(animate);
     const delta = clock.getDelta();
     let hybeSe = false;
+    let jeVlevo = false;
 
     // 1. OVLÁDÁNÍ A POHYB
     if (keys.a || joystickVector.x < -0.1) { 
         player.position.x -= 0.15; 
-        player.scale.x = 2; // Kouká doleva (původní obrázek)
+        jeVlevo = true; // Jdeme doleva
         hybeSe = true; 
     } else if (keys.d || joystickVector.x > 0.1) { 
         player.position.x += 0.15; 
-        player.scale.x = -2; // Zrcadlení doprava
+        jeVlevo = false; // Jdeme doprava
         hybeSe = true; 
     }
     
     if (keys.w || joystickVector.y > 0.1) { player.position.z -= 0.15; hybeSe = true; }
     if (keys.s || joystickVector.y < -0.1) { player.position.z += 0.15; hybeSe = true; }
 
-    // 2. ANIMACE (Vždy použijeme jen první dva snímky, zrcadlení udělá zbytek)
+    // 2. ANIMACE - OPRAVENÝ VÝBĚR SNÍMKŮ
     if (hybeSe) {
         aktualniSnimek += 10 * delta;
         let frame = Math.floor(aktualniSnimek) % 2; // Střídá 0 a 1
-        playerTexture.offset.x = frame * 0.25;      // Použije vždy první dva snímky
+        
+        if (jeVlevo) {
+            // Teď jdeme doleva, takže chceme snímky 3 a 4 (offset 0.5+)
+            playerTexture.offset.x = 0.5 + (frame * 0.25); 
+        } else {
+            // Jdeme doprava, chceme snímky 1 a 2 (offset 0.0+)
+            playerTexture.offset.x = frame * 0.25;
+        }
     } else {
+        // Stání (první snímek v řadě - kouká doprava)
         playerTexture.offset.x = 0;
     }
 
