@@ -67,29 +67,38 @@ function animate() {
     requestAnimationFrame(animate);
     const delta = clock.getDelta();
     let hybeSe = false;
+    let jeVlevo = false;
 
-    // Pohyb a otáčení (změnil jsem scale na 2 a -2, aby se banán zrcadlil)
+    // 1. OVLÁDÁNÍ A POHYB
     if (keys.a || joystickVector.x < -0.1) { 
         player.position.x -= 0.15; 
-        player.scale.x = -2; 
+        jeVlevo = true; // Snímky 1,2 v obrázku
         hybeSe = true; 
     } else if (keys.d || joystickVector.x > 0.1) { 
         player.position.x += 0.15; 
-        player.scale.x = 2;  
+        jeVlevo = false; // Snímky 3,4 v obrázku
         hybeSe = true; 
     }
+    
     if (keys.w || joystickVector.y > 0.1) { player.position.z -= 0.15; hybeSe = true; }
     if (keys.s || joystickVector.y < -0.1) { player.position.z += 0.15; hybeSe = true; }
 
-    // Animace chůze
+    // 2. ANIMACE (výběr snímku podle směru)
     if (hybeSe) {
         aktualniSnimek += 10 * delta;
-        playerTexture.offset.x = (Math.floor(aktualniSnimek) % 4) / 4;
+        let frame = Math.floor(aktualniSnimek) % 2; // Střídá 0 a 1
+        
+        if (jeVlevo) {
+            playerTexture.offset.x = frame * 0.25; 
+        } else {
+            playerTexture.offset.x = 0.5 + (frame * 0.25);
+        }
     } else {
+        // Stání (vždy první snímek v řadě - kouká vlevo)
         playerTexture.offset.x = 0;
     }
 
-    // Výskok
+    // 3. RADOSTNÝ VÝSKOK
     if (casRadosti > 0) {
         casRadosti -= delta;
         player.position.y = vychoziVyska + Math.sin((1 - (casRadosti / 0.4)) * Math.PI) * 0.8;
@@ -97,7 +106,7 @@ function animate() {
         player.position.y = vychoziVyska;
     }
 
-    // Kolize
+    // 4. KOLIZE A LOGIKA
     plastics.forEach((p, i) => {
         if (player.position.distanceTo(p.position) < 1.5) {
             scene.remove(p);
@@ -116,10 +125,9 @@ function animate() {
         }
     });
 
-    // Kamera sleduje hráče, ale nekopíruje jeho výskoky (lookAt na fixní výšku 1)
+    // 5. KAMERA A RENDER
     camera.position.set(player.position.x, 10, player.position.z + 10);
     camera.lookAt(player.position.x, 1, player.position.z);
-    
     renderer.render(scene, camera);
 }
 animate();
