@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-// --- SCÉNA ----
+// --- SCÉNA ---
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x1a1a2e);
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -14,23 +14,23 @@ const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
 dirLight.position.set(0, 20, 10);
 scene.add(dirLight);
 
-// --- TEXTURY A PODLAHA ---
+// --- PODLAHA (MĚSÍC) ---
 const textureLoader = new THREE.TextureLoader();
 const moonTexture = textureLoader.load('mesic.jpg');
 moonTexture.wrapS = moonTexture.wrapT = THREE.RepeatWrapping;
 moonTexture.repeat.set(10, 10);
-
 const floor = new THREE.Mesh(
     new THREE.PlaneGeometry(60, 60), 
     new THREE.MeshStandardMaterial({ map: moonTexture })
 );
-floor.rotation.x = -Math.PI / 2; // Plochá podlaha
+floor.rotation.x = -Math.PI / 2; 
+floor.position.y = 0; // Podlaha leží v nule
 scene.add(floor);
 
 // --- HRÁČ ---
 const playerTexture = textureLoader.load('panacek_krok.png');
 playerTexture.repeat.set(1 / 4, 1);
-const player = new THREE.Sprite(new THREE.SpriteMaterial({ map: playerTexture }));
+const player = new THREE.Sprite(new THREE.SpriteMaterial({ map: playerTexture, transparent: true }));
 player.scale.set(2, 2, 1); 
 const vychoziVyska = 1.0; 
 player.position.y = vychoziVyska;
@@ -40,7 +40,7 @@ scene.add(player);
 const plasticTexture = textureLoader.load('plast.png');
 let plastics = [];
 for (let i = 0; i < 15; i++) {
-    const p = new THREE.Sprite(new THREE.SpriteMaterial({ map: plasticTexture }));
+    const p = new THREE.Sprite(new THREE.SpriteMaterial({ map: plasticTexture, transparent: true }));
     p.scale.set(0.6, 0.6, 1);
     p.position.set((Math.random() - 0.5) * 40, 0.5, (Math.random() - 0.5) * 40);
     scene.add(p);
@@ -68,7 +68,7 @@ function animate() {
     const delta = clock.getDelta();
     let hybeSe = false;
 
-    // Pohyb a otáčení přes scale.x (zrcadlení)
+    // Pohyb a otáčení přes scale.x
     if (keys.a || joystickVector.x < -0.1) { 
         player.position.x -= 0.15; 
         player.scale.x = -2; // Otočení doleva
@@ -81,7 +81,7 @@ function animate() {
     if (keys.w || joystickVector.y > 0.1) { player.position.z -= 0.15; hybeSe = true; }
     if (keys.s || joystickVector.y < -0.1) { player.position.z += 0.15; hybeSe = true; }
 
-    // Sprite Animace
+    // Animace
     if (hybeSe) {
         aktualniSnimek += 10 * delta;
         playerTexture.offset.x = (Math.floor(aktualniSnimek) % 4) / 4;
@@ -89,7 +89,7 @@ function animate() {
         playerTexture.offset.x = 0;
     }
 
-    // Radostný výskok
+    // Radost a UI
     if (casRadosti > 0) {
         casRadosti -= delta;
         player.position.y = vychoziVyska + Math.sin((1 - (casRadosti / 0.4)) * Math.PI) * 0.8;
@@ -97,7 +97,7 @@ function animate() {
         player.position.y = vychoziVyska;
     }
 
-    // Kolize
+    // Kolize a logika
     plastics.forEach((p, i) => {
         if (player.position.distanceTo(p.position) < 1.5) {
             scene.remove(p);
@@ -105,6 +105,14 @@ function animate() {
             plastCount++;
             document.getElementById('plast-count').innerText = plastCount;
             casRadosti = 0.4;
+            
+            const status = document.getElementById('status');
+            if (plastCount === 10) {
+                status.innerText = "Mise splněna! 10 plastů doma!";
+                status.style.color = "#2ecc71";
+            } else if (plastCount > 10) {
+                status.innerText = "Jsi borec! Plastů: " + plastCount;
+            }
         }
     });
 
