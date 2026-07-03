@@ -72,15 +72,29 @@ function animate() {
     const delta = clock.getDelta();
     let hracSeHybe = false;
 
+// Pohyb přes klávesnici
     if (keys.w) { player.position.z -= speed; hracSeHybe = true; }
     if (keys.s) { player.position.z += speed; hracSeHybe = true; }
-    if (keys.a) { player.position.x -= speed; hracSeHybe = true; player.scale.x = -2; }
-    if (keys.d) { player.position.x += speed; hracSeHybe = true; player.scale.x = 2; }
+    
+    // Pohyb a otáčení pro A a D
+    if (keys.a) { 
+        player.position.x -= speed; 
+        hracSeHybe = true; 
+        player.scale.x = -2; // Překlopení šířky
+    }
+    if (keys.d) { 
+        player.position.x += speed; 
+        hracSeHybe = true; 
+        player.scale.x = 2;  // Původní velikost
+    }
 
+    // Pohyb přes joystick
     if (joystickVector.x !== 0 || joystickVector.y !== 0) {
         player.position.x += joystickVector.x * speed;
         player.position.z -= joystickVector.y * speed; 
         hracSeHybe = true;
+        
+        // Tady nastavujeme scale podle směru joysticku
         player.scale.x = joystickVector.x < 0 ? -2 : 2;
     }
 
