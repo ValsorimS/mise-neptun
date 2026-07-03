@@ -14,7 +14,7 @@ const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
 dirLight.position.set(0, 20, 10);
 scene.add(dirLight);
 
-// --- PODLAHA (MĚSÍC) ---
+// --- PODLAHA ---
 const textureLoader = new THREE.TextureLoader();
 const moonTexture = textureLoader.load('mesic.jpg');
 moonTexture.wrapS = moonTexture.wrapT = THREE.RepeatWrapping;
@@ -23,16 +23,16 @@ const floor = new THREE.Mesh(
     new THREE.PlaneGeometry(60, 60), 
     new THREE.MeshStandardMaterial({ map: moonTexture })
 );
-floor.rotation.x = -Math.PI / 2; 
-floor.position.y = 0; // Podlaha leží v nule
+floor.rotation.x = -Math.PI / 2;
+floor.position.y = 0;
 scene.add(floor);
 
 // --- HRÁČ ---
 const playerTexture = textureLoader.load('panacek_krok.png');
 playerTexture.repeat.set(1 / 4, 1);
 const player = new THREE.Sprite(new THREE.SpriteMaterial({ map: playerTexture, transparent: true }));
-player.scale.set(2, 2, 1); 
-const vychoziVyska = 1.0; 
+player.scale.set(2, 2, 1);
+const vychoziVyska = 1.0;
 player.position.y = vychoziVyska;
 scene.add(player);
 
@@ -68,20 +68,20 @@ function animate() {
     const delta = clock.getDelta();
     let hybeSe = false;
 
-    // Pohyb a otáčení přes scale.x
+    // Pohyb a otáčení (změnil jsem scale na 2 a -2, aby se banán zrcadlil)
     if (keys.a || joystickVector.x < -0.1) { 
         player.position.x -= 0.15; 
-        player.scale.x = -2; // Otočení doleva
+        player.scale.x = -2; 
         hybeSe = true; 
     } else if (keys.d || joystickVector.x > 0.1) { 
         player.position.x += 0.15; 
-        player.scale.x = 2;  // Otočení doprava
+        player.scale.x = 2;  
         hybeSe = true; 
     }
     if (keys.w || joystickVector.y > 0.1) { player.position.z -= 0.15; hybeSe = true; }
     if (keys.s || joystickVector.y < -0.1) { player.position.z += 0.15; hybeSe = true; }
 
-    // Animace
+    // Animace chůze
     if (hybeSe) {
         aktualniSnimek += 10 * delta;
         playerTexture.offset.x = (Math.floor(aktualniSnimek) % 4) / 4;
@@ -89,7 +89,7 @@ function animate() {
         playerTexture.offset.x = 0;
     }
 
-    // Radost a UI
+    // Výskok
     if (casRadosti > 0) {
         casRadosti -= delta;
         player.position.y = vychoziVyska + Math.sin((1 - (casRadosti / 0.4)) * Math.PI) * 0.8;
@@ -97,7 +97,7 @@ function animate() {
         player.position.y = vychoziVyska;
     }
 
-    // Kolize a logika
+    // Kolize
     plastics.forEach((p, i) => {
         if (player.position.distanceTo(p.position) < 1.5) {
             scene.remove(p);
@@ -116,8 +116,10 @@ function animate() {
         }
     });
 
-    camera.position.set(player.position.x, player.position.y + 10, player.position.z + 10);
-    camera.lookAt(player.position);
+    // Kamera sleduje hráče, ale nekopíruje jeho výskoky (lookAt na fixní výšku 1)
+    camera.position.set(player.position.x, 10, player.position.z + 10);
+    camera.lookAt(player.position.x, 1, player.position.z);
+    
     renderer.render(scene, camera);
 }
 animate();
