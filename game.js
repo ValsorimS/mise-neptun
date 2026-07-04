@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-// --- SCÉNA ---
+// --- SCÉNA A KAMERA ---
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x1a1a2e);
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -14,20 +14,20 @@ const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
 dirLight.position.set(0, 20, 10);
 scene.add(dirLight);
 
-// --- PODLAHA ---
+// --- PODLAHA (MĚSÍC) ---
 const textureLoader = new THREE.TextureLoader();
 const moonTexture = textureLoader.load('mesic.jpg');
 moonTexture.wrapS = moonTexture.wrapT = THREE.RepeatWrapping;
 moonTexture.repeat.set(10, 10);
 const floor = new THREE.Mesh(
-    new THREE.PlaneGeometry(60, 60), 
+    new THREE.PlaneGeometry(80, 80), 
     new THREE.MeshStandardMaterial({ map: moonTexture })
 );
 floor.rotation.x = -Math.PI / 2;
 floor.position.y = 0;
 scene.add(floor);
 
-// --- HRÁČ ---
+// --- HRÁČ (BANÁN) ---
 const playerTexture = textureLoader.load('panacek_krok.png');
 playerTexture.repeat.set(1 / 4, 1);
 const player = new THREE.Sprite(new THREE.SpriteMaterial({ map: playerTexture, transparent: true }));
@@ -36,39 +36,31 @@ const vychoziVyska = 1.0;
 player.position.y = vychoziVyska;
 scene.add(player);
 
-// --- PLASTY ---
-const plasticTexture = textureLoader.load('plast.png');
-let plastics = [];
-for (let i = 0; i < 15; i++) {
-    const p = new THREE.Sprite(new THREE.SpriteMaterial({ map: plasticTexture, transparent: true }));
-    p.scale.set(0.6, 0.6, 1);
-    p.position.set((Math.random() - 0.5) * 40, 0.5, (Math.random() - 0.5) * 40);
-    scene.add(p);
-    plastics.push(p);
-}
-
 // --- INVENTÁŘ A NÁSTROJE ---
 let inventar = { wood: 0, stone: 0, iron: 0, gold: 0, diamond: 0, dirt: 0 };
 
-// Pro testování dáme banánovi do začátku rovnou železný krumpáč, aby mohl rozbít všechno.
-// Později si nástroje můžete přepínat.
-let aktualniNastroj = { typ: "krumpac", material: "iron" }; 
+// Definice dostupných nástrojů (zatím základní materiály)
+const nastroje = {
+    '1': { typ: "sekera", material: "wood", nazev: "Dřevěná sekera" },
+    '2': { typ: "krumpac", material: "iron", nazev: "Železný krumpáč" },
+    '3': { typ: "lopata", material: "wood", nazev: "Dřevěná lopata" }
+};
 
+// Začínáme s krumpáčem (klávesa 2)
+let aktualniNastroj = nastroje['2']; 
+
+// Funkce určující, co může hráč těžit (Nyní už přísně podle pravidel!)
 function muzeTezit(typBloku) {
     if (typBloku === "dirt" && aktualniNastroj.typ === "lopata") return true;
     if (typBloku === "wood" && aktualniNastroj.typ === "sekera") return true;
     
-    // Pro krumpáč a jeskynní bloky
     if (aktualniNastroj.typ === "krumpac") {
         if (typBloku === "stone") return true; 
         if (typBloku === "iron" && (aktualniNastroj.material === "stone" || aktualniNastroj.material === "iron" || aktualniNastroj.material === "diamond")) return true;
         if ((typBloku === "gold" || typBloku === "diamond") && (aktualniNastroj.material === "iron" || aktualniNastroj.material === "diamond")) return true;
     }
-    
-    // Pro testování (aby mohl banán testovat vše): Pokud máš železný krumpáč, sekej i dřevo a hlínu. 
-    // Můžete pak smazat, až přidáte přepínání zbraní.
-    if (aktualniNastroj.material === "iron") return true; 
 
+    // Odstranili jsme "cheat" výjimku, takže se teď musí použít správný nástroj!
     return false;
 }
 
@@ -83,42 +75,78 @@ const blockMaterials = {
 };
 
 let blocks = [];
+const obsazenePozice = new Set(); 
 
-function pridajBlok(typ, x, z) {
-    const geometry = new THREE.BoxGeometry(1.5, 1.5, 1.5);
-    const mesh = new THREE.Mesh(geometry, blockMaterials[typ]);
-    mesh.position.set(x, 0.75, z); // 0.75 je polovina výšky, aby kostka seděla na zemi
-    mesh.userData = { typ: typ };  // Uložíme si, co je to za blok
-    scene.add(mesh);
-    blocks.push(mesh);
+function pridajBlokChytre(typ, minX, maxX, minZ, maxZ) {
+    for (let pokus = 0; pokus < 10; pokus++) {
+        let x = Math.round((minX + Math.random() * (maxX - minX)) / 1.5) * 1.5;
+        let z = Math.round((minZ + Math.random() * (maxZ - minZ)) / 1.5) * 1.5;
+        let klic = `${x},${z}`; 
+
+        if (!obsazenePozice.has(klic)) {
+            obsazenePozice.add(klic); 
+            const geometry = new THREE.BoxGeometry(1.5, 1.5, 1.5);
+            const mesh = new THREE.Mesh(geometry, blockMaterials[typ]);
+            mesh.position.set(x, 0.75, z); 
+            mesh.userData = { typ: typ };  
+            scene.add(mesh);
+            blocks.push(mesh);
+            return; 
+        }
+    }
 }
 
 // Generování biomu: LES (vlevo nahoře mapy)
 for(let i = 0; i < 20; i++) {
-    pridajBlok("wood", -10 - Math.random() * 15, -10 - Math.random() * 15);
-    pridajBlok("dirt", -10 - Math.random() * 15, -10 - Math.random() * 15);
+    pridajBlokChytre("wood", -25, -5, -25, -5);
+    pridajBlokChytre("dirt", -25, -5, -25, -5);
 }
 
 // Generování biomu: JESKYNĚ (vpravo dole mapy)
-for(let i = 0; i < 30; i++) {
-    pridajBlok("stone", 10 + Math.random() * 20, 10 + Math.random() * 20);
+for(let i = 0; i < 30; i++) pridajBlokChytre("stone", 5, 25, 5, 25);
+for(let i = 0; i < 8; i++) pridajBlokChytre("iron", 10, 25, 10, 25);
+for(let i = 0; i < 4; i++) pridajBlokChytre("gold", 15, 25, 15, 25);
+for(let i = 0; i < 2; i++) pridajBlokChytre("diamond", 18, 25, 18, 25);
+
+
+// --- PLASTY (Původní mise) ---
+const plasticTexture = textureLoader.load('plast.png');
+let plastics = [];
+for (let i = 0; i < 15; i++) {
+    // Generujeme plasty jen do prázdných míst (okolo středu), aby nebyly ve stromech
+    const p = new THREE.Sprite(new THREE.SpriteMaterial({ map: plasticTexture, transparent: true }));
+    p.scale.set(0.6, 0.6, 1);
+    p.position.set((Math.random() - 0.5) * 15, 0.5, (Math.random() - 0.5) * 15);
+    scene.add(p);
+    plastics.push(p);
 }
-// Přidání vzácných rud do jeskyně
-for(let i = 0; i < 8; i++) pridajBlok("iron", 15 + Math.random() * 15, 15 + Math.random() * 15);
-for(let i = 0; i < 4; i++) pridajBlok("gold", 18 + Math.random() * 10, 18 + Math.random() * 10);
-for(let i = 0; i < 2; i++) pridajBlok("diamond", 20 + Math.random() * 5, 20 + Math.random() * 5);
+
 
 // --- OVLÁDÁNÍ ---
 const keys = { w: false, a: false, s: false, d: false };
-window.addEventListener('keydown', (e) => { if(keys.hasOwnProperty(e.key)) keys[e.key] = true; });
-window.addEventListener('keyup', (e) => { if(keys.hasOwnProperty(e.key)) keys[e.key] = false; });
+
+window.addEventListener('keydown', (e) => { 
+    if(keys.hasOwnProperty(e.key)) keys[e.key] = true; 
+    
+    // Přepínání nástrojů klávesami 1, 2, 3
+    if (nastroje[e.key]) {
+        aktualniNastroj = nastroje[e.key];
+        // Aktualizace textu na obrazovce
+        document.getElementById('current-tool').innerText = aktualniNastroj.nazev;
+    }
+});
+
+window.addEventListener('keyup', (e) => { 
+    if(keys.hasOwnProperty(e.key)) keys[e.key] = false; 
+});
 
 const joystick = window.nipplejs.create({ zone: document.getElementById('joystick-zone'), mode: 'static', position: { left: '50%', top: '50%' }, size: 100 });
 let joystickVector = { x: 0, y: 0 };
 joystick.on('move', (e, d) => { joystickVector.x = Math.cos(d.angle.radian) * (d.distance/50); joystickVector.y = Math.sin(d.angle.radian) * (d.distance/50); });
 joystick.on('end', () => joystickVector = { x: 0, y: 0 });
 
-// --- ANIMACE ---
+
+// --- HLAVNÍ HERNÍ SMYČKA ---
 const clock = new THREE.Clock();
 let plastCount = 0;
 let casRadosti = 0;
@@ -130,38 +158,37 @@ function animate() {
     let hybeSe = false;
     let jeVlevo = false;
 
-    // 1. OVLÁDÁNÍ A POHYB
+    // Uložení pozice pro fyziku (odrazy od zdí)
+    let staraX = player.position.x;
+    let staraZ = player.position.z;
+
+    // 1. POHYB
     if (keys.a || joystickVector.x < -0.1) { 
         player.position.x -= 0.15; 
-        jeVlevo = true; // Jdeme doleva
+        jeVlevo = true; 
         hybeSe = true; 
     } else if (keys.d || joystickVector.x > 0.1) { 
         player.position.x += 0.15; 
-        jeVlevo = false; // Jdeme doprava
+        jeVlevo = false; 
         hybeSe = true; 
     }
-    
     if (keys.w || joystickVector.y > 0.1) { player.position.z -= 0.15; hybeSe = true; }
     if (keys.s || joystickVector.y < -0.1) { player.position.z += 0.15; hybeSe = true; }
 
-    // 2. ANIMACE - OPRAVENÝ VÝBĚR SNÍMKŮ
+    // 2. ANIMACE CHŮZE BANÁNU
     if (hybeSe) {
         aktualniSnimek += 10 * delta;
-        let frame = Math.floor(aktualniSnimek) % 2; // Střídá 0 a 1
-        
+        let frame = Math.floor(aktualniSnimek) % 2; 
         if (jeVlevo) {
-            // Teď jdeme doleva, takže chceme snímky 3 a 4 (offset 0.5+)
-            playerTexture.offset.x = 0.5 + (frame * 0.25); 
+            playerTexture.offset.x = 0.5 + (frame * 0.25); // Snímky pro chůzi vlevo
         } else {
-            // Jdeme doprava, chceme snímky 1 a 2 (offset 0.0+)
-            playerTexture.offset.x = frame * 0.25;
+            playerTexture.offset.x = frame * 0.25;         // Snímky pro chůzi vpravo
         }
     } else {
-        // Stání (první snímek v řadě - kouká doprava)
         playerTexture.offset.x = 0;
     }
 
-    // 3. RADOSTNÝ VÝSKOK (zůstává stejný)
+    // 3. RADOSTNÝ VÝSKOK (Po natěžení nebo sebrání plastu)
     if (casRadosti > 0) {
         casRadosti -= delta;
         player.position.y = vychoziVyska + Math.sin((1 - (casRadosti / 0.4)) * Math.PI) * 0.8;
@@ -169,7 +196,36 @@ function animate() {
         player.position.y = vychoziVyska;
     }
 
-    // 4. KOLIZE A LOGIKA (zůstává stejná)
+    // 4. FYZIKA A TĚŽBA BLOKŮ
+    let narazilDoZdi = false;
+    for (let i = blocks.length - 1; i >= 0; i--) {
+        let b = blocks[i];
+        if (player.position.distanceTo(b.position) < 1.2) { // 1.2 = hráč je těsně u kostky
+            if (muzeTezit(b.userData.typ)) {
+                // Hráč může těžit -> blok zmizí, přidá se do inventáře
+                scene.remove(b);
+                inventar[b.userData.typ]++;
+                blocks.splice(i, 1);
+                
+                // Aktualizace UI textu
+                let uiElement = document.getElementById('inv-' + b.userData.typ);
+                if (uiElement) uiElement.innerText = inventar[b.userData.typ];
+                
+                casRadosti = 0.2; // Malý poskok
+                obsazenePozice.delete(`${b.position.x},${b.position.z}`); // Uvolní místo v paměti
+            } else {
+                // Hráč nemá nástroj -> blok je neprostupná zeď
+                narazilDoZdi = true;
+            }
+        }
+    }
+    // Pokud hráč narazil a nemá nástroj, vráti se na původní místo (neprojde)
+    if (narazilDoZdi) {
+        player.position.x = staraX;
+        player.position.z = staraZ;
+    }
+
+    // 5. SBĚR PLASTŮ
     plastics.forEach((p, i) => {
         if (player.position.distanceTo(p.position) < 1.5) {
             scene.remove(p);
@@ -186,29 +242,7 @@ function animate() {
         }
     });
 
-    // TĚŽBA BLOKŮ
-    for (let i = blocks.length - 1; i >= 0; i--) {
-        let b = blocks[i];
-        // Když hráč narazí do bloku
-        if (player.position.distanceTo(b.position) < 1.5) {
-            // Zkontroluje, jestli má správný nástroj
-            if (muzeTezit(b.userData.typ)) {
-                scene.remove(b);                 // Zmizí ze světa
-                inventar[b.userData.typ]++;      // Přidá do inventáře
-                blocks.splice(i, 1);             // Smaže ze seznamu bloků
-                
-                // Aktualizuje HTML batoh
-                let uiElement = document.getElementById('inv-' + b.userData.typ);
-                if (uiElement) uiElement.innerText = inventar[b.userData.typ];
-                
-                casRadosti = 0.2; // Malý radostný poskok při natěžení
-            } else {
-                // Tady později přidáme kód, aby blok fungoval jako zeď (neprojde skrz)
-            }
-        }
-    }
-
-    // 5. KAMERA A RENDER
+    // 6. KAMERA A VYKRESLENÍ
     camera.position.set(player.position.x, 10, player.position.z + 10);
     camera.lookAt(player.position.x, 1, player.position.z);
     renderer.render(scene, camera);
