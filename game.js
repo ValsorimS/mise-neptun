@@ -93,7 +93,7 @@ function pridajBlokChytre(typ, minX, maxX, minZ, maxZ) {
     }
 }
 
-// Generování biomu: LES (vlevo nahoře mapy)
+// Generování biomu: LES (vlevo nahoře mapy) 
 for(let i = 0; i < 20; i++) {
     pridajBlokChytre("wood", -25, -5, -25, -5);
     pridajBlokChytre("dirt", -25, -5, -25, -5);
