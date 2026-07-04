@@ -39,17 +39,16 @@ scene.add(player);
 // --- INVENTÁŘ A NÁSTROJE ---
 let inventar = { wood: 0, stone: 0, iron: 0, gold: 0, diamond: 0, dirt: 0 };
 
-// Definice dostupných nástrojů (zatím základní materiály)
+// Začínáme POUZE s dřevěnými nástroji!
 const nastroje = {
     '1': { typ: "sekera", material: "wood", nazev: "Dřevěná sekera" },
-    '2': { typ: "krumpac", material: "iron", nazev: "Železný krumpáč" },
+    '2': { typ: "krumpac", material: "wood", nazev: "Dřevěný krumpáč" }, // Oslabeno na dřevo
     '3': { typ: "lopata", material: "wood", nazev: "Dřevěná lopata" }
 };
 
-// Začínáme s krumpáčem (klávesa 2)
 let aktualniNastroj = nastroje['2']; 
 
-// Funkce určující, co může hráč těžit (Nyní už přísně podle pravidel!)
+// Funkce určující, co může hráč těžit (ZŮSTÁVÁ STEJNÁ JAKO MINULE)
 function muzeTezit(typBloku) {
     if (typBloku === "dirt" && aktualniNastroj.typ === "lopata") return true;
     if (typBloku === "wood" && aktualniNastroj.typ === "sekera") return true;
@@ -59,8 +58,6 @@ function muzeTezit(typBloku) {
         if (typBloku === "iron" && (aktualniNastroj.material === "stone" || aktualniNastroj.material === "iron" || aktualniNastroj.material === "diamond")) return true;
         if ((typBloku === "gold" || typBloku === "diamond") && (aktualniNastroj.material === "iron" || aktualniNastroj.material === "diamond")) return true;
     }
-
-    // Odstranili jsme "cheat" výjimku, takže se teď musí použít správný nástroj!
     return false;
 }
 
@@ -105,8 +102,8 @@ for(let i = 0; i < 20; i++) {
 // Generování biomu: JESKYNĚ (vpravo dole mapy)
 for(let i = 0; i < 30; i++) pridajBlokChytre("stone", 5, 25, 5, 25);
 for(let i = 0; i < 8; i++) pridajBlokChytre("iron", 10, 25, 10, 25);
-for(let i = 0; i < 4; i++) pridajBlokChytre("gold", 15, 25, 15, 25);
-for(let i = 0; i < 2; i++) pridajBlokChytre("diamond", 18, 25, 18, 25);
+for(let i = 0; i < 6; i++) pridajBlokChytre("gold", 15, 25, 15, 25);
+for(let i = 0; i < 5; i++) pridajBlokChytre("diamond", 18, 25, 18, 25);
 
 
 // --- PLASTY (Původní mise) ---
@@ -247,4 +244,50 @@ function animate() {
     camera.lookAt(player.position.x, 1, player.position.z);
     renderer.render(scene, camera);
 }
+document.getElementById('current-tool').innerText = aktualniNastroj.nazev;
 animate();
+// --- CRAFTING (VÝROBA) ---
+function vyrobKrumpac(cilovyMaterial, cenaSuroviny, cenaDreva, novyNazev) {
+    const msgBox = document.getElementById('craft-msg');
+    
+    // Kontrola, zda má hráč dostatek surovin
+    if (inventar[cilovyMaterial] >= cenaSuroviny && inventar.wood >= cenaDreva) {
+        
+        // Odečtení surovin
+        inventar[cilovyMaterial] -= cenaSuroviny;
+        inventar.wood -= cenaDreva;
+        
+        // Vylepšení krumpáče (pod klávesou 2)
+        nastroje['2'].material = cilovyMaterial;
+        nastroje['2'].nazev = novyNazev;
+        
+        // Pokud má hráč zrovna krumpáč v ruce, zaktualizujeme text na obrazovce
+        if (aktualniNastroj.typ === "krumpac") {
+            document.getElementById('current-tool').innerText = novyNazev;
+        }
+        
+        // Aktualizace batohu na obrazovce
+        document.getElementById('inv-' + cilovyMaterial).innerText = inventar[cilovyMaterial];
+        document.getElementById('inv-wood').innerText = inventar.wood;
+        
+        // Zpráva o úspěchu
+        msgBox.innerText = "Vyrobeno!";
+        msgBox.style.color = "#2ecc71";
+        
+        // Radostný výskok banánu
+        casRadosti = 0.5;
+        
+    } else {
+        // Zpráva o neúspěchu
+        msgBox.innerText = "Chybí suroviny!";
+        msgBox.style.color = "#e74c3c";
+    }
+    
+    // Vymazání zprávy po 2 vteřinách
+    setTimeout(() => { msgBox.innerText = ""; }, 2000);
+}
+
+// Napojení tlačítek z HTML na funkci
+document.getElementById('btn-craft-stone').addEventListener('click', () => vyrobKrumpac('stone', 3, 2, 'Kamenný krumpáč'));
+document.getElementById('btn-craft-iron').addEventListener('click', () => vyrobKrumpac('iron', 3, 2, 'Železný krumpáč'));
+document.getElementById('btn-craft-diamond').addEventListener('click', () => vyrobKrumpac('diamond', 3, 2, 'Diamantový krumpáč'));
